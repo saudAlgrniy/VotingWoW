@@ -6,36 +6,108 @@
     <title>صفحة التصويت</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: 'Tajawal', Arial, sans-serif;
+            background-color: #eef2f5;
             margin: 0;
             padding: 0;
             text-align: center;
+            color: #333;
         }
+
         header {
-            background-color: #2196f3;
+            background-color: #007bff;
             color: white;
-            padding: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 20px auto;
             background: white;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
+
+        .container h2 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            color: #555;
+        }
+
         .option {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px;
+            padding: 15px;
             border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s ease;
         }
+
+        .option:hover {
+            background-color: #f9f9f9;
+        }
+
         .option img {
+            width: 80px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-left: 15px;
+        }
+
+        .option span {
+            font-size: 1.2rem;
+            flex: 1;
+            text-align: right;
+        }
+
+        .vote-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .vote-button:hover {
+            background-color: #218838;
+        }
+
+        .votes-count {
+            font-size: 1rem;
+            color: #555;
+        }
+
+        .no-options {
+            font-size: 1.2rem;
+            color: #777;
+        }
+
+        /* Loading spinner style */
+        .loading-spinner {
             width: 50px;
             height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
             border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
@@ -47,6 +119,7 @@
     </header>
     <div class="container" id="optionsContainer">
         <h2>خيارات التصويت:</h2>
+        <div class="loading-spinner" id="loadingSpinner"></div> <!-- Spinner loading -->
     </div>
 
     <script>
@@ -67,11 +140,13 @@
 
         // Fetch and display options
         const optionsContainer = document.getElementById("optionsContainer");
+        const loadingSpinner = document.getElementById("loadingSpinner");
 
         function displayOptions() {
             db.ref("options").on("value", (snapshot) => {
-                optionsContainer.innerHTML = "<h2>خيارات التصويت:</h2>"; // Reset container
                 const data = snapshot.val();
+                optionsContainer.innerHTML = "<h2>خيارات التصويت:</h2>"; // Reset container
+                loadingSpinner.style.display = "none"; // Hide loading spinner
 
                 if (data) {
                     for (const key in data) {
@@ -80,12 +155,27 @@
                             <div class="option">
                                 <span>${option.name}</span>
                                 <img src="${option.image}" alt="${option.name}">
+                                <div>
+                                    <button class="vote-button" onclick="vote('${key}')">تصويت</button>
+                                    <p class="votes-count">عدد المصوتين: ${option.votes || 0}</p>
+                                </div>
                             </div>
                         `;
                     }
                 } else {
-                    optionsContainer.innerHTML += "<p>لا توجد خيارات متاحة حالياً.</p>";
+                    optionsContainer.innerHTML += "<p class='no-options'>لا توجد خيارات متاحة حالياً.</p>";
                 }
+            });
+        }
+
+        // Voting function
+        function vote(optionKey) {
+            const optionRef = db.ref(`options/${optionKey}`);
+            optionRef.transaction((option) => {
+                if (option) {
+                    option.votes = (option.votes || 0) + 1;
+                }
+                return option;
             });
         }
 
