@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>صفحة الإدارة</title>
     <style>
-        /* General body styling */
+        /* تنسيقات عامة */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f0f0f0, #a9c7f5);
@@ -18,7 +18,7 @@
             justify-content: center;
         }
 
-        /* Header styling */
+        /* رأس الصفحة */
         header {
             background-color: #3498db;
             color: white;
@@ -36,7 +36,7 @@
             background-color: #2980b9;
         }
 
-        /* Container styling */
+        /* الحاوية الرئيسية */
         .container {
             background: #ffffff;
             border-radius: 15px;
@@ -51,7 +51,7 @@
             transform: scale(1.05);
         }
 
-        /* Form input fields */
+        /* حقول الإدخال */
         input {
             padding: 15px;
             width: 100%;
@@ -85,7 +85,7 @@
             background-color: #2980b9;
         }
 
-        /* Option list styling */
+        /* قائمة الخيارات */
         .option-list {
             margin-top: 30px;
             overflow-y: auto;
@@ -96,7 +96,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* Option item styling */
+        /* عنصر الخيار */
         .option-item {
             display: flex;
             justify-content: space-between;
@@ -138,7 +138,7 @@
             background-color: #c0392b;
         }
 
-        /* Media Query for smaller devices */
+        /* استجابة للشاشات الصغيرة */
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -171,7 +171,7 @@
     </div>
 
     <script>
-        // Firebase configuration
+        // إعداد Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCofKkonFelr038vwWCjQIVJuJEncBoNy0",
             authDomain: "voting-app-3d570.firebaseapp.com",
@@ -182,11 +182,11 @@
             appId: "1:430176927762:web:490f6c6a5f9fc2f75018cb"
         };
 
-        // Initialize Firebase
+        // تهيئة Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Add option function
+        // وظيفة إضافة خيار جديد
         function addOption() {
             const name = document.getElementById("optionName").value.trim();
             const image = document.getElementById("optionImage").value.trim();
@@ -200,25 +200,24 @@
             newOptionRef.set({
                 name: name,
                 image: image,
-                votes: 0 // Adding the votes counter for the option
+                votes: 0
             }).then(() => {
                 alert("تمت الإضافة بنجاح!");
                 document.getElementById("optionName").value = "";
                 document.getElementById("optionImage").value = "";
-                loadOptions(); // Reload the options after adding a new one
             }).catch((error) => {
                 console.error("Error adding option: ", error);
                 alert("حدث خطأ أثناء الإضافة: " + error.message);
             });
         }
 
-        // Function to load options from the database
+        // تحميل الخيارات في الوقت الفعلي
         function loadOptions() {
             const optionList = document.getElementById("optionList");
-            optionList.innerHTML = ""; // Clear the existing list to avoid duplication
 
-            db.ref("options").once("value", (snapshot) => { // Using `once` to load data once
+            db.ref("options").on("value", (snapshot) => {
                 const data = snapshot.val();
+                optionList.innerHTML = ""; // مسح القائمة لتجنب التكرار
                 if (data) {
                     for (const key in data) {
                         const option = data[key];
@@ -236,13 +235,12 @@
             });
         }
 
-        // Delete option function
+        // وظيفة حذف خيار
         function deleteOption(optionKey) {
             const optionRef = db.ref(`options/${optionKey}`);
             optionRef.remove()
                 .then(() => {
                     alert("تم الحذف بنجاح!");
-                    loadOptions(); // Reload options after deletion
                 })
                 .catch((error) => {
                     console.error("Error deleting option: ", error);
@@ -250,24 +248,7 @@
                 });
         }
 
-        // Function to vote for an option
-        function voteForOption(optionKey) {
-            const optionRef = db.ref(`options/${optionKey}`);
-            optionRef.once("value", (snapshot) => {
-                const currentVotes = snapshot.val().votes || 0;
-                optionRef.update({
-                    votes: currentVotes + 1
-                }).then(() => {
-                    alert("تم التصويت بنجاح!");
-                    loadOptions(); // Reload options after voting
-                }).catch((error) => {
-                    console.error("Error voting: ", error);
-                    alert("حدث خطأ أثناء التصويت: " + error.message);
-                });
-            });
-        }
-
-        // Load options on page load
+        // تحميل الخيارات عند فتح الصفحة
         loadOptions();
     </script>
 </body>
