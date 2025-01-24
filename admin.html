@@ -5,30 +5,152 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>صفحة الإدارة</title>
     <style>
+        /* General body styling */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f0f0, #a9c7f5);
             margin: 0;
             padding: 0;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            justify-content: center;
         }
+
+        /* Header styling */
         header {
-            background-color: #4caf50;
+            background-color: #3498db;
             color: white;
-            padding: 1rem;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
+            font-size: 2rem;
+            text-align: center;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px 10px 0 0;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
         }
-        input, button {
+
+        header:hover {
+            background-color: #2980b9;
+        }
+
+        /* Container styling */
+        .container {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: scale(1.05);
+        }
+
+        /* Form input fields */
+        input {
+            padding: 15px;
+            width: 100%;
             margin: 10px 0;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.7);
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Option list styling */
+        .option-list {
+            margin-top: 30px;
+            overflow-y: auto;
+            max-height: 400px;
             padding: 10px;
-            font-size: 16px;
+            background-color: #fafafa;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Option item styling */
+        .option-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: transform 0.3s ease;
+        }
+
+        .option-item:hover {
+            transform: translateX(10px);
+            background-color: #f0f8ff;
+        }
+
+        .option-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .option-item img:hover {
+            transform: scale(1.1);
+        }
+
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        /* Media Query for smaller devices */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            header {
+                font-size: 1.5rem;
+            }
+
+            input, button {
+                font-size: 1rem;
+            }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
@@ -43,6 +165,9 @@
         <input type="text" id="optionName" placeholder="اسم الخيار">
         <input type="text" id="optionImage" placeholder="رابط الصورة">
         <button onclick="addOption()">إضافة الخيار</button>
+        
+        <h2>الخيارات المتاحة</h2>
+        <div class="option-list" id="optionList"></div>
     </div>
 
     <script>
@@ -79,11 +204,52 @@
                 alert("تمت الإضافة بنجاح!");
                 document.getElementById("optionName").value = "";
                 document.getElementById("optionImage").value = "";
+                loadOptions(); // Reload the options after adding a new one
             }).catch((error) => {
                 console.error("Error adding option: ", error);
                 alert("حدث خطأ أثناء الإضافة: " + error.message);
             });
         }
+
+        // Function to load options from the database
+        function loadOptions() {
+            const optionList = document.getElementById("optionList");
+            optionList.innerHTML = ""; // Clear existing list
+            db.ref("options").on("value", (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    for (const key in data) {
+                        const option = data[key];
+                        optionList.innerHTML += `
+                            <div class="option-item">
+                                <span>${option.name}</span>
+                                <img src="${option.image}" alt="${option.name}">
+                                <button class="delete-button" onclick="deleteOption('${key}')">حذف</button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    optionList.innerHTML = "<p>لا توجد خيارات حالياً.</p>";
+                }
+            });
+        }
+
+        // Delete option function
+        function deleteOption(optionKey) {
+            const optionRef = db.ref(`options/${optionKey}`);
+            optionRef.remove()
+                .then(() => {
+                    alert("تم الحذف بنجاح!");
+                    loadOptions(); // Reload options after deletion
+                })
+                .catch((error) => {
+                    console.error("Error deleting option: ", error);
+                    alert("حدث خطأ أثناء الحذف: " + error.message);
+                });
+        }
+
+        // Load options on page load
+        loadOptions();
     </script>
 </body>
 </html>
