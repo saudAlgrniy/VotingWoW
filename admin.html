@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحة الإدارة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        header {
+            background-color: #4caf50;
+            color: white;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>صفحة الإدارة</h1>
+    </header>
+    <div class="container">
+        <h2>إضافة خيار جديد</h2>
+        <input type="text" id="optionName" placeholder="اسم الخيار">
+        <input type="text" id="optionImage" placeholder="رابط الصورة">
+        <button onclick="addOption()">إضافة الخيار</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCofKkonFelr038vwWCjQIVJuJEncBoNy0",
+            authDomain: "voting-app-3d570.firebaseapp.com",
+            databaseURL: "https://voting-app-3d570-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "voting-app-3d570",
+            storageBucket: "voting-app-3d570.appspot.com",
+            messagingSenderId: "430176927762",
+            appId: "1:430176927762:web:490f6c6a5f9fc2f75018cb"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function addOption() {
+            const name = document.getElementById("optionName").value;
+            const image = document.getElementById("optionImage").value;
+
+            if (!name || !image) {
+                alert("يرجى إدخال جميع الحقول!");
+                return;
+            }
+
+            const newOptionRef = firebase.database().ref("options").push();
+            newOptionRef.set({
+                name,
+                image
+            }).then(() => {
+                alert("تمت الإضافة بنجاح!");
+                document.getElementById("optionName").value = "";
+                document.getElementById("optionImage").value = "";
+            }).catch((error) => console.error(error));
+        }
+    </script>
+</body>
+</html>

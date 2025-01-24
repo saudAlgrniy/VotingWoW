@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصويت</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        header {
+            background-color: #4caf50;
+            color: white;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 1rem;
+        }
+        img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results p {
+            margin: 5px 0;
+            font-size: 18px;
+        }
+        .admin-link {
+            margin-top: 20px;
+            display: block;
+            font-size: 16px;
+            color: #4caf50;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ما الذي ترغبون برؤيته في المرة القادمة؟</h1>
+    </header>
+    <div class="container">
+        <div id="options"></div>
+        <button onclick="submitVote()">صوت الآن</button>
+        <div class="results" id="results"></div>
+        <a href="admin.html" class="admin-link">صفحة الإدارة</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js"></script>
+    <script>
+        // إعداد Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCofKkonFelr038vwWCjQIVJuJEncBoNy0",
+            authDomain: "voting-app-3d570.firebaseapp.com",
+            databaseURL: "https://voting-app-3d570-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "voting-app-3d570",
+            storageBucket: "voting-app-3d570.appspot.com",
+            messagingSenderId: "430176927762",
+            appId: "1:430176927762:web:490f6c6a5f9fc2f75018cb"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // عرض الخيارات
+        const optionsDiv = document.getElementById("options");
+        firebase.database().ref("options").on("value", (snapshot) => {
+            optionsDiv.innerHTML = "";
+            const options = snapshot.val();
+            for (const key in options) {
+                const option = options[key];
+                optionsDiv.innerHTML += `
+                    <div>
+                        <img src="${option.image}" alt="${option.name}">
+                        <input type="radio" id="${key}" name="vote" value="${key}">
+                        <label for="${key}">${option.name}</label>
+                    </div>
+                `;
+            }
+        });
+
+        // التصويت
+        function submitVote() {
+            const selectedOption = document.querySelector('input[name="vote"]:checked');
+            if (!selectedOption) {
+                alert("يرجى اختيار خيار للتصويت!");
+                return;
+            }
+
+            const voteKey = selectedOption.value;
+            const voteRef = firebase.database().ref("votes/" + voteKey);
+            voteRef.transaction((currentVotes) => (currentVotes || 0) + 1).then(() => {
+                alert("تم التصويت بنجاح!");
+            }).catch((error) => console.error(error));
+        }
+
+        // عرض النتائج
+        const resultsDiv = document.getElementById("results");
+        firebase.database().ref("votes").on("value", (snapshot) => {
+            resultsDiv.innerHTML = "<h2>نتائج التصويت:</h2>";
+            const votes = snapshot.val();
+            for (const key in votes) {
+                resultsDiv.innerHTML += `<p>${key}: ${votes[key]} صوت</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
