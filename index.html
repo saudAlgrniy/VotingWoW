@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تصويت</title>
+    <title>صفحة التصويت</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,69 +13,44 @@
             text-align: center;
         }
         header {
-            background-color: #4caf50;
+            background-color: #2196f3;
             color: white;
             padding: 1rem;
-            margin-bottom: 2rem;
         }
         .container {
             max-width: 600px;
-            margin: 0 auto;
+            margin: 20px auto;
             background: white;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
         }
-        h1 {
-            margin-bottom: 1rem;
+        .option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
         }
-        img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        button {
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .results p {
-            margin: 5px 0;
-            font-size: 18px;
-        }
-        .admin-link {
-            margin-top: 20px;
-            display: block;
-            font-size: 16px;
-            color: #4caf50;
-            text-decoration: none;
+        .option img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <header>
-        <h1>ما الذي ترغبون برؤيته في المرة القادمة؟</h1>
+        <h1>صفحة التصويت</h1>
     </header>
-    <div class="container">
-        <div id="options"></div>
-        <button onclick="submitVote()">صوت الآن</button>
-        <div class="results" id="results"></div>
-        <a href="admin.html" class="admin-link">صفحة الإدارة</a>
+    <div class="container" id="optionsContainer">
+        <h2>خيارات التصويت:</h2>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js"></script>
     <script>
-        // إعداد Firebase
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCofKkonFelr038vwWCjQIVJuJEncBoNy0",
             authDomain: "voting-app-3d570.firebaseapp.com",
@@ -86,50 +61,36 @@
             appId: "1:430176927762:web:490f6c6a5f9fc2f75018cb"
         };
 
+        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // عرض الخيارات
-        const optionsDiv = document.getElementById("options");
-        firebase.database().ref("options").on("value", (snapshot) => {
-            optionsDiv.innerHTML = "";
-            const options = snapshot.val();
-            for (const key in options) {
-                const option = options[key];
-                optionsDiv.innerHTML += `
-                    <div>
-                        <img src="${option.image}" alt="${option.name}">
-                        <input type="radio" id="${key}" name="vote" value="${key}">
-                        <label for="${key}">${option.name}</label>
-                    </div>
-                `;
-            }
-        });
+        // Fetch and display options
+        const optionsContainer = document.getElementById("optionsContainer");
 
-        // التصويت
-        function submitVote() {
-            const selectedOption = document.querySelector('input[name="vote"]:checked');
-            if (!selectedOption) {
-                alert("يرجى اختيار خيار للتصويت!");
-                return;
-            }
+        function displayOptions() {
+            db.ref("options").on("value", (snapshot) => {
+                optionsContainer.innerHTML = "<h2>خيارات التصويت:</h2>"; // Reset container
+                const data = snapshot.val();
 
-            const voteKey = selectedOption.value;
-            const voteRef = firebase.database().ref("votes/" + voteKey);
-            voteRef.transaction((currentVotes) => (currentVotes || 0) + 1).then(() => {
-                alert("تم التصويت بنجاح!");
-            }).catch((error) => console.error(error));
+                if (data) {
+                    for (const key in data) {
+                        const option = data[key];
+                        optionsContainer.innerHTML += `
+                            <div class="option">
+                                <span>${option.name}</span>
+                                <img src="${option.image}" alt="${option.name}">
+                            </div>
+                        `;
+                    }
+                } else {
+                    optionsContainer.innerHTML += "<p>لا توجد خيارات متاحة حالياً.</p>";
+                }
+            });
         }
 
-        // عرض النتائج
-        const resultsDiv = document.getElementById("results");
-        firebase.database().ref("votes").on("value", (snapshot) => {
-            resultsDiv.innerHTML = "<h2>نتائج التصويت:</h2>";
-            const votes = snapshot.val();
-            for (const key in votes) {
-                resultsDiv.innerHTML += `<p>${key}: ${votes[key]} صوت</p>`;
-            }
-        });
+        // Load options on page load
+        displayOptions();
     </script>
 </body>
 </html>
