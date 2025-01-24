@@ -199,7 +199,8 @@
             const newOptionRef = db.ref("options").push();
             newOptionRef.set({
                 name: name,
-                image: image
+                image: image,
+                votes: 0 // Adding the votes counter for the option
             }).then(() => {
                 alert("تمت الإضافة بنجاح!");
                 document.getElementById("optionName").value = "";
@@ -214,15 +215,16 @@
         // Function to load options from the database
         function loadOptions() {
             const optionList = document.getElementById("optionList");
-            optionList.innerHTML = ""; // Clear existing list
-            db.ref("options").on("value", (snapshot) => {
+            optionList.innerHTML = ""; // Clear the existing list to avoid duplication
+
+            db.ref("options").once("value", (snapshot) => { // Using `once` to load data once
                 const data = snapshot.val();
                 if (data) {
                     for (const key in data) {
                         const option = data[key];
                         optionList.innerHTML += `
                             <div class="option-item">
-                                <span>${option.name}</span>
+                                <span>${option.name} - عدد المصوتين: ${option.votes}</span>
                                 <img src="${option.image}" alt="${option.name}">
                                 <button class="delete-button" onclick="deleteOption('${key}')">حذف</button>
                             </div>
@@ -246,6 +248,23 @@
                     console.error("Error deleting option: ", error);
                     alert("حدث خطأ أثناء الحذف: " + error.message);
                 });
+        }
+
+        // Function to vote for an option
+        function voteForOption(optionKey) {
+            const optionRef = db.ref(`options/${optionKey}`);
+            optionRef.once("value", (snapshot) => {
+                const currentVotes = snapshot.val().votes || 0;
+                optionRef.update({
+                    votes: currentVotes + 1
+                }).then(() => {
+                    alert("تم التصويت بنجاح!");
+                    loadOptions(); // Reload options after voting
+                }).catch((error) => {
+                    console.error("Error voting: ", error);
+                    alert("حدث خطأ أثناء التصويت: " + error.message);
+                });
+            });
         }
 
         // Load options on page load
