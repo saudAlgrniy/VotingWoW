@@ -31,6 +31,8 @@
             font-size: 16px;
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <header>
@@ -43,9 +45,8 @@
         <button onclick="addOption()">إضافة الخيار</button>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js"></script>
     <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCofKkonFelr038vwWCjQIVJuJEncBoNy0",
             authDomain: "voting-app-3d570.firebaseapp.com",
@@ -56,27 +57,32 @@
             appId: "1:430176927762:web:490f6c6a5f9fc2f75018cb"
         };
 
+        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Add option function
         function addOption() {
-            const name = document.getElementById("optionName").value;
-            const image = document.getElementById("optionImage").value;
+            const name = document.getElementById("optionName").value.trim();
+            const image = document.getElementById("optionImage").value.trim();
 
             if (!name || !image) {
                 alert("يرجى إدخال جميع الحقول!");
                 return;
             }
 
-            const newOptionRef = firebase.database().ref("options").push();
+            const newOptionRef = db.ref("options").push();
             newOptionRef.set({
-                name,
-                image
+                name: name,
+                image: image
             }).then(() => {
                 alert("تمت الإضافة بنجاح!");
                 document.getElementById("optionName").value = "";
                 document.getElementById("optionImage").value = "";
-            }).catch((error) => console.error(error));
+            }).catch((error) => {
+                console.error("Error adding option: ", error);
+                alert("حدث خطأ أثناء الإضافة: " + error.message);
+            });
         }
     </script>
 </body>
