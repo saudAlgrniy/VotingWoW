@@ -1,4 +1,890 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Ultra Admin Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1018;
+      --panel: #121826;
+      --panel-2: #161e2f;
+      --text: #e6edf3;
+      --muted: #9aa7b2;
+      --primary: #6aa9ff;
+      --primary-2: #4a8df0;
+      --accent: #5eead4;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --ring: 0 0 0 2px rgba(106,169,255,.5);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --radius-xs: 8px;
+      --grid-gap: 16px;
+    }
+    :root.light {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #f3f5f9;
+      --text: #0b1220;
+      --muted: #556170;
+      --primary: #2f6eff;
+      --primary-2: #2a5de0;
+      --accent: #06b6d4;
+      --shadow: 0 10px 30px rgba(10, 20, 40, .08);
+      --ring: 0 0 0 2px rgba(47,110,255,.2);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; }
+    input, select, textarea { font: inherit; color: inherit; }
+
+    /* Layout */
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 64px 1fr;
+      grid-template-areas: "sidebar topbar" "sidebar main";
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border-right: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 18px 12px;
+      transition: width .3s ease, transform .3s ease;
+      position: relative;
+      z-index: 3;
+    }
+    .sidebar.collapsed { width: 84px; }
+    .sidebar .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      letter-spacing: .3px;
+      background: radial-gradient(60% 80% at 0% 0%, rgba(106,169,255,.15), transparent 60%);
+    }
+    .brand .logo {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: 0 8px 18px rgba(47,110,255,.35);
+      display: grid; place-items: center;
+      color: white;
+      font-weight: 800;
+    }
+    .sidebar .section { margin-top: 14px; }
+    .nav {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .nav button {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      text-align: left;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background .2s ease, transform .05s ease;
+    }
+    .nav button:hover { background: rgba(255,255,255,.06); }
+    .nav button.active { background: rgba(106,169,255,.16); box-shadow: inset var(--ring); }
+    .nav .icon { width: 20px; height: 20px; opacity: .9; }
+    .nav .chev { opacity: .5; }
+
+    .toggle-collapse {
+      margin-top: auto;
+      display: flex; gap: 10px; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .sidebar.collapsed .label, .sidebar.collapsed .chev, .sidebar.collapsed .brand .text { display: none; }
+
+    .topbar {
+      grid-area: topbar;
+      height: 64px;
+      background: var(--panel);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .search {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--panel-2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 999px; padding: 8px 12px; min-width: 240px;
+      flex: 1;
+    }
+    .search input { flex: 1; border: none; background: transparent; outline: none; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06);
+      background: var(--panel-2); display: grid; place-items: center; cursor: pointer;
+    }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #d946ef, #22d3ee); }
+    .user-menu { position: relative; }
+    .dropdown {
+      position: absolute; right: 0; top: 44px; min-width: 200px; background: var(--panel);
+      border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 6px; display: none;
+    }
+    .dropdown.open { display: block; }
+    .dropdown button { width: 100%; background: transparent; border: none; text-align: left; padding: 10px; border-radius: 10px; cursor: pointer; }
+    .dropdown button:hover { background: rgba(255,255,255,.06); }
+
+    .main { grid-area: main; overflow: auto; padding: 16px; }
+    .container { display: grid; gap: var(--grid-gap); }
+
+    /* Cards grid */
+    .cards {
+      display: grid; gap: var(--grid-gap);
+      grid-template-columns: repeat(12, 1fr);
+    }
+    .card {
+      background: var(--panel); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px; transition: transform .1s ease, box-shadow .2s ease;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,0,0,.4); }
+    .card.h2 { grid-column: span 6; }
+    .card.h3 { grid-column: span 4; }
+    .card.h4 { grid-column: span 3; }
+    .card.h6 { grid-column: span 2; }
+
+    .stat { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    .stat .label { color: var(--muted); font-size: 12px; letter-spacing: .3px; }
+    .stat .value { font-size: 22px; font-weight: 800; }
+    .spark { width: 100%; height: 44px; }
+
+    /* Tables */
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,.06); text-align: left; }
+    th { font-size: 12px; letter-spacing: .3px; color: var(--muted); cursor: pointer; user-select: none; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .input, .select { background: var(--panel-2); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 8px 10px; }
+    .btn { background: var(--primary); border: none; color: white; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+    .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid rgba(255,255,255,.06); }
+    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,.12); color: var(--text); }
+    .btn.danger { background: var(--danger); }
+    .btn.success { background: var(--success); }
+
+    /* Modals */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 10; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(720px, calc(100vw - 32px)); max-height: min(86vh, 900px); overflow: auto; background: var(--panel); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; box-shadow: var(--shadow); }
+    .modal header, .modal footer { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .modal footer { border-top: 1px solid rgba(255,255,255,.06); border-bottom: none; display: flex; justify-content: flex-end; gap: 10px; }
+    .modal .content { padding: 16px; display: grid; gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .field { display: grid; gap: 6px; grid-column: span 6; }
+    .field label { font-size: 12px; color: var(--muted); }
+    .field input, .field select, .field textarea { background: var(--panel-2); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 10px; }
+    .error { color: var(--danger); font-size: 12px; }
+
+    /* Toasts */
+    .toasts { position: fixed; right: 16px; bottom: 16px; display: grid; gap: 10px; z-index: 20; }
+    .toast { background: var(--panel); border: 1px solid rgba(255,255,255,.08); border-left: 4px solid var(--primary); border-radius: 10px; padding: 12px 14px; min-width: 260px; box-shadow: var(--shadow); animation: slideIn .25s ease; }
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+    @keyframes slideIn { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .card.h3 { grid-column: span 6; }
+      .card.h4, .card.h6 { grid-column: span 4; }
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 84px 1fr; }
+      .sidebar { width: 84px; }
+      .sidebar .label, .sidebar .chev, .sidebar .brand .text { display: none; }
+      .card.h2, .card.h3 { grid-column: span 12; }
+      .card.h4, .card.h6 { grid-column: span 6; }
+      .topbar .search { min-width: 0; }
+    }
+    @media (max-width: 600px) {
+      .card.h4, .card.h6 { grid-column: span 12; }
+      .topbar { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app">
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">
+        <div class="logo">UA</div>
+        <div class="text">Ultra Admin</div>
+      </div>
+      <div class="section">
+        <nav class="nav" id="nav">
+          <button data-route="dashboard" class="active"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg><span class="label">Dashboard</span><span class="chev">›</span></button>
+          <button data-route="users"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V20h14v-3.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V20h6v-3.5c0-2.33-4.67-3.5-7-3.5z"/></svg><span class="label">Users</span><span class="chev">›</span></button>
+          <button data-route="payments"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 7H3c-1.1 0-2 .9-2 2v6a2 2 0 002 2h18a2 2 0 002-2V9a2 2 0 00-2-2zm0 8H3v-4h18v4zm-3-2H6v-2h12v2z"/></svg><span class="label">Payments</span><span class="chev">›</span></button>
+          <button data-route="referrals"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span class="label">Referrals</span><span class="chev">›</span></button>
+          <button data-route="reports"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM7 13h2v4H7v-4zm4-6h2v10h-2V7zm4 3h2v7h-2v-7z"/></svg><span class="label">Reports</span><span class="chev">›</span></button>
+          <button data-route="settings"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.07 7.07 0 00-1.63-.94l-.36-2.54A.5.5 0 0013.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 00-.6.22L.7 7.98a.5.5 0 00.12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L.82 13.66a.5.5 0 00-.12.64l1.92 3.32c.14.24.43.34.68.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.05.25.26.42.5.42h3.8c.24 0 .45-.17.5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.25.12.54.02.68-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1115.5 12 3.5 3.5 0 0112 15.5z"/></svg><span class="label">Settings</span><span class="chev">›</span></button>
+          <button data-route="logout"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/></svg><span class="label">Logout</span><span class="chev">›</span></button>
+        </nav>
+      </div>
+      <div class="toggle-collapse">
+        <span class="label">Collapse</span>
+        <button id="collapseBtn" class="icon-btn" title="Toggle sidebar"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+      </div>
+    </aside>
+    <header class="topbar">
+      <button id="mobileSidebarBtn" class="icon-btn" title="Menu"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+      <div class="search"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 001.48-5.34C15.08 5.59 12.52 3 9.5 3S3.92 5.59 3.92 8.39 6.48 13.78 9.5 13.78c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 12C7.01 12 5 9.99 5 7.5S7.01 3 9.5 3 14 5.01 14 7.5 11.99 12 9.5 12z"/></svg><input id="globalSearch" placeholder="Search across tables (Alt+/)" /></div>
+      <div class="top-actions">
+        <button id="notifBtn" class="icon-btn" title="Notifications"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 002 2zm6-6V9a6 6 0 10-12 0v7l-2 2v1h16v-1l-2-2z"/></svg></button>
+        <button id="msgBtn" class="icon-btn" title="Messages"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6h-2v9H6v2a1 1 0 001 1h9l5 4V7a1 1 0 00-1-1zM17 2H3a1 1 0 00-1 1v13l4-4h11a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg></button>
+        <div class="user-menu">
+          <button id="userBtn" class="icon-btn" title="User"><div class="avatar"></div></button>
+          <div id="userDropdown" class="dropdown">
+            <button id="welcomeUser">Signed in as <strong>admin</strong></button>
+            <button id="themeToggle">Toggle Theme</button>
+            <button data-route="settings">Settings</button>
+            <button data-route="logout">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="main">
+      <div id="route-dashboard" class="container route">
+        <div class="cards">
+          <section class="card h3">
+            <div class="stat">
+              <div>
+                <div class="label">Total Users</div>
+                <div id="stat-total-users" class="value">0</div>
+              </div>
+              <div><canvas id="spark-users" class="spark"></canvas></div>
+            </div>
+          </section>
+          <section class="card h3">
+            <div class="stat">
+              <div>
+                <div class="label">Active Subscriptions</div>
+                <div id="stat-active-subs" class="value">0</div>
+              </div>
+              <div><canvas id="spark-subs" class="spark"></canvas></div>
+            </div>
+          </section>
+          <section class="card h3">
+            <div class="stat">
+              <div>
+                <div class="label">Revenue</div>
+                <div id="stat-revenue" class="value">$0</div>
+              </div>
+              <div><canvas id="spark-revenue" class="spark"></canvas></div>
+            </div>
+          </section>
+          <section class="card h3">
+            <div class="stat">
+              <div>
+                <div class="label">New Signups Today</div>
+                <div id="stat-new" class="value">0</div>
+              </div>
+              <div><canvas id="spark-new" class="spark"></canvas></div>
+            </div>
+          </section>
+          <section class="card h6">
+            <div class="stat">
+              <div>
+                <div class="label">Referrals</div>
+                <div id="stat-referrals" class="value">0</div>
+              </div>
+              <div><canvas id="spark-referrals" class="spark"></canvas></div>
+            </div>
+          </section>
+          <section class="card h6">
+            <div class="stat">
+              <div>
+                <div class="label">Conversion</div>
+                <div id="stat-conv" class="value">0%</div>
+              </div>
+              <div><canvas id="spark-conv" class="spark"></canvas></div>
+            </div>
+          </section>
+          <section class="card h12" style="grid-column: span 12;">
+            <h3 style="margin: 0 0 12px 0;">Recent Activity</h3>
+            <div class="table-wrap">
+              <table id="table-activity">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>User</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div id="route-users" class="container route" style="display:none;">
+        <section class="card" style="grid-column: span 12;">
+          <div class="controls" style="margin-bottom: 10px;">
+            <input id="usersSearch" class="input" placeholder="Search users" />
+            <select id="usersPerPage" class="select"><option>10</option><option>25</option><option>50</option></select>
+            <button id="userAddBtn" class="btn">Add User</button>
+          </div>
+          <div class="table-wrap">
+            <table id="table-users">
+              <thead>
+                <tr>
+                  <th data-sort="name">Name</th>
+                  <th data-sort="email">Email</th>
+                  <th data-sort="role">Role</th>
+                  <th data-sort="status">Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="usersPagination" class="controls" style="justify-content: space-between; margin-top: 10px;"></div>
+        </section>
+      </div>
+
+      <div id="route-payments" class="container route" style="display:none;">
+        <section class="card" style="grid-column: span 12;">
+          <div class="controls" style="margin-bottom: 10px;">
+            <input id="paymentsSearch" class="input" placeholder="Search payments" />
+            <input id="paymentsDateFrom" type="date" class="input" />
+            <input id="paymentsDateTo" type="date" class="input" />
+            <select id="paymentsStatus" class="select"><option value="">All Status</option><option>Paid</option><option>Pending</option><option>Failed</option></select>
+            <button id="paymentAddBtn" class="btn">Add Payment</button>
+            <div style="margin-left:auto; font-weight:700;">Total: <span id="paymentsTotal">$0</span></div>
+          </div>
+          <div class="table-wrap">
+            <table id="table-payments">
+              <thead>
+                <tr>
+                  <th data-sort="date">Date</th>
+                  <th data-sort="user">User</th>
+                  <th data-sort="amount">Amount</th>
+                  <th data-sort="status">Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div id="route-referrals" class="container route" style="display:none;">
+        <section class="card" style="grid-column: span 12;">
+          <div class="controls" style="margin-bottom:10px;">
+            <input id="referralsSearch" class="input" placeholder="Search referrals" />
+            <button id="referralAddBtn" class="btn">Add Referral</button>
+          </div>
+          <div class="table-wrap">
+            <table id="table-referrals">
+              <thead>
+                <tr>
+                  <th data-sort="code">Code</th>
+                  <th data-sort="user">User</th>
+                  <th data-sort="reward">Reward</th>
+                  <th data-sort="status">Status</th>
+                  <th>Bonus Days</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div id="route-reports" class="container route" style="display:none;">
+        <div class="cards">
+          <section class="card h6">
+            <h4 style="margin:0 0 10px 0;">Monthly Users</h4>
+            <canvas id="chart-users" width="400" height="220"></canvas>
+          </section>
+          <section class="card h6">
+            <h4 style="margin:0 0 10px 0;">Revenue</h4>
+            <canvas id="chart-revenue" width="400" height="220"></canvas>
+          </section>
+          <section class="card h6">
+            <h4 style="margin:0 0 10px 0;">Plans</h4>
+            <canvas id="chart-plans" width="400" height="220"></canvas>
+          </section>
+          <section class="card h12" style="grid-column: span 12;">
+            <div class="controls" style="margin-bottom:10px;">
+              <input id="reportsFrom" type="date" class="input" />
+              <input id="reportsTo" type="date" class="input" />
+              <select id="reportsUser" class="select"></select>
+              <button id="exportCsvBtn" class="btn secondary">Export CSV</button>
+              <button id="exportPdfBtn" class="btn secondary">Export PDF</button>
+            </div>
+            <div class="table-wrap">
+              <table id="table-reports">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Event</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div id="route-settings" class="container route" style="display:none;">
+        <section class="card" style="grid-column: span 12;">
+          <h3 style="margin-top:0;">Preferences</h3>
+          <div class="form-grid">
+            <div class="field" style="grid-column: span 4;">
+              <label>Theme</label>
+              <select id="prefTheme"><option value="dark">Dark</option><option value="light">Light</option></select>
+            </div>
+            <div class="field" style="grid-column: span 4;">
+              <label>Default Currency</label>
+              <select id="prefCurrency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select>
+            </div>
+            <div class="field" style="grid-column: span 4;">
+              <label>Primary Color</label>
+              <input id="prefPrimary" type="color" value="#6aa9ff" />
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="savePrefsBtn" class="btn success">Save Preferences</button>
+            <button id="resetPrefsBtn" class="btn ghost">Reset</button>
+          </div>
+        </section>
+        <section class="card" style="grid-column: span 12;">
+          <div style="display:flex; align-items:center; justify-content: space-between; gap:10px;">
+            <h3 style="margin:0;">Subscription Plans</h3>
+            <button id="planAddBtn" class="btn">Add Plan</button>
+          </div>
+          <div class="table-wrap" style="margin-top:10px;">
+            <table id="table-plans">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Interval</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="card" style="grid-column: span 12;">
+          <h3 style="margin-top:0;">Notifications</h3>
+          <div class="form-grid">
+            <div class="field" style="grid-column: span 4;">
+              <label>Email Alerts</label>
+              <select id="notifEmail"><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select>
+            </div>
+            <div class="field" style="grid-column: span 4;">
+              <label>SMS Alerts</label>
+              <select id="notifSms"><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select>
+            </div>
+            <div class="field" style="grid-column: span 4;">
+              <label>In-App Toasts</label>
+              <select id="notifToasts"><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select>
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="saveNotifBtn" class="btn success">Save Notifications</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="route-logout" class="container route" style="display:none;">
+        <section class="card" style="grid-column: span 12;">
+          <h3>Logout</h3>
+          <p>Click below to sign out. This will clear session data.</p>
+          <button id="logoutConfirmBtn" class="btn danger">Logout</button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <div id="modal" class="modal-backdrop">
+    <div class="modal">
+      <header>
+        <strong id="modalTitle">Modal</strong>
+      </header>
+      <div id="modalContent" class="content"></div>
+      <footer>
+        <button id="modalCancel" class="btn ghost">Cancel</button>
+        <button id="modalOk" class="btn">OK</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts"></div>
+
+  <script>
+  (function(){
+    "use strict";
+
+    // Core State and Utilities
+    const qs = (sel, el=document) => el.querySelector(sel);
+    const qsa = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+    const $on = (el, ev, fn, opts) => el.addEventListener(ev, fn, opts);
+    const $off = (el, ev, fn, opts) => el.removeEventListener(ev, fn, opts);
+    const $emit = (name, detail={}) => document.dispatchEvent(new CustomEvent(name, { detail }));
+
+    const Storage = {
+      get(key, fallback){
+        try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback; }
+      },
+      set(key, value){ localStorage.setItem(key, JSON.stringify(value)); },
+      del(key){ localStorage.removeItem(key); }
+    };
+
+    const Session = {
+      get(key, fallback){
+        try { const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback; }
+      },
+      set(key, value){ sessionStorage.setItem(key, JSON.stringify(value)); },
+      del(key){ sessionStorage.removeItem(key); }
+    };
+
+    const fmt = {
+      money(v, cur){
+        try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur||Settings.get().currency }).format(v||0); } catch(e) { return `$${(v||0).toFixed(2)}`; }
+      },
+      dateISO(d){
+        const dt = new Date(d); return dt.toISOString().slice(0,10);
+      },
+      time(d){ const dt = new Date(d); return dt.toLocaleTimeString(); },
+      id(prefix){ return `${prefix}_${Math.random().toString(36).slice(2,10)}_${Date.now().toString(36)}`; },
+    };
+
+    // Settings
+    const Settings = {
+      KEY: 'ua:settings',
+      get(){
+        return Storage.get(this.KEY, { theme: 'dark', currency: 'USD', primary: '#6aa9ff', notifications: { email:'enabled', sms:'disabled', toasts:'enabled' }, plans: [
+          { id: 'plan_basic', name:'Basic', price: 9, interval:'month', status:'active' },
+          { id: 'plan_pro', name:'Pro', price: 29, interval:'month', status:'active' },
+          { id: 'plan_enterprise', name:'Enterprise', price: 99, interval:'month', status:'inactive' },
+        ] });
+      },
+      set(v){ Storage.set(this.KEY, v); $emit('settings:changed', { settings: v }); },
+      update(patch){ const cur = this.get(); const next = Object.assign({}, cur, patch); this.set(next); return next; }
+    };
+
+    // Seed data
+    const Seeds = {
+      ensure(){
+        if(!localStorage.getItem('ua:users')){
+          const users = Array.from({length: 48}).map((_,i)=>({
+            id: fmt.id('user'),
+            name: `User ${i+1}`,
+            email: `user${i+1}@example.com`,
+            role: ['Admin','Manager','Member'][i%3],
+            status: ['Active','Invited','Suspended'][i%3],
+            joinedAt: Date.now() - (i*86400000),
+          }));
+          Storage.set('ua:users', users);
+        }
+        if(!localStorage.getItem('ua:payments')){
+          const users = Storage.get('ua:users', []);
+          const payments = Array.from({length: 120}).map((_,i)=>({
+            id: fmt.id('pay'),
+            userId: users[i % users.length].id,
+            user: users[i % users.length].name,
+            amount: ((i%10)+1) * 7.5,
+            status: ['Paid','Pending','Failed'][i%3],
+            date: Date.now() - (i*43200000),
+          }));
+          Storage.set('ua:payments', payments);
+        }
+        if(!localStorage.getItem('ua:referrals')){
+          const users = Storage.get('ua:users', []);
+          const refs = Array.from({length: 40}).map((_,i)=>({
+            id: fmt.id('ref'),
+            code: `REF${1000+i}`,
+            userId: users[i % users.length].id,
+            user: users[i % users.length].name,
+            reward: [5,10,15][i%3],
+            status: ['Pending','Approved','Rejected'][i%3],
+            bonusDays: 0,
+            createdAt: Date.now() - (i*86400000)
+          }));
+          Storage.set('ua:referrals', refs);
+        }
+        if(!localStorage.getItem('ua:activity')){
+          Storage.set('ua:activity', []);
+        }
+      }
+    };
+
+    // Theme
+    function applyTheme(){
+      const s = Settings.get();
+      const root = document.documentElement;
+      if(s.theme === 'light') root.classList.add('light'); else root.classList.remove('light');
+      root.style.setProperty('--primary', s.primary);
+    }
+
+    // Toasts
+    function toast(message, type='info'){ const wrap = qs('#toasts'); const el = document.createElement('div'); el.className = `toast ${type==='success'?'success': type==='error'?'error':''}`; el.textContent = message; wrap.appendChild(el); setTimeout(()=>{ el.style.opacity = '0'; setTimeout(()=>wrap.removeChild(el), 300); }, 3000); }
+
+    // Router
+    const Router = {
+      current: 'dashboard',
+      go(route){
+        this.current = route;
+        qsa('.route').forEach(r=> r.style.display = 'none');
+        const tgt = qs(`#route-${route}`);
+        if(tgt) tgt.style.display = '';
+        qsa('.nav button').forEach(b=> b.classList.toggle('active', b.dataset.route===route));
+        $emit('route:changed', { route });
+      }
+    };
+
+    // Charts (minimal no-lib)
+    const MiniChart = {
+      line(canvas, values){
+        const ctx = canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth; const h = canvas.height = canvas.clientHeight; ctx.clearRect(0,0,w,h);
+        const max = Math.max(...values, 1); const min = Math.min(...values, 0); const pad = 6; const dx = (w - pad*2) / (values.length - 1 || 1);
+        ctx.lineWidth = 2; const grad = ctx.createLinearGradient(0,0,w,0); grad.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--primary')); grad.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+        ctx.strokeStyle = grad; ctx.beginPath(); values.forEach((v,i)=>{ const x = pad + dx*i; const y = pad + (h - pad*2) * (1 - (v-min)/(max-min||1)); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+      },
+      bar(canvas, values){
+        const ctx = canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth; const h = canvas.height = canvas.clientHeight; ctx.clearRect(0,0,w,h);
+        const max = Math.max(...values, 1); const pad = 6; const bw = (w - pad*2) / values.length * .8; const gap = (w - pad*2 - bw*values.length) / (values.length-1||1);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+        values.forEach((v,i)=>{ const x = pad + i*(bw+gap); const bh = (h - pad*2) * (v/max); const y = h - pad - bh; ctx.globalAlpha = .9; ctx.fillRect(x,y,bw,bh); }); ctx.globalAlpha = 1;
+      },
+      pie(canvas, values){
+        const ctx = canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth; const h = canvas.height = canvas.clientHeight; ctx.clearRect(0,0,w,h);
+        const total = values.reduce((a,b)=>a+b,0)||1; const r = Math.min(w,h)/2 - 6; const cx = w/2, cy = h/2; const colors = ['#60a5fa','#f472b6','#34d399','#f59e0b','#a78bfa'];
+        let a0 = -Math.PI/2; values.forEach((v,i)=>{ const a1 = a0 + (v/total)*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle = colors[i%colors.length]; ctx.arc(cx,cy,r,a0,a1); ctx.closePath(); ctx.fill(); a0=a1; });
+      }
+    };
+
+    // Data Access
+    const DB = {
+      users: { key: 'ua:users', all(){ return Storage.get(this.key, []); }, save(rows){ Storage.set(this.key, rows); } },
+      payments: { key: 'ua:payments', all(){ return Storage.get(this.key, []); }, save(rows){ Storage.set(this.key, rows); } },
+      referrals: { key: 'ua:referrals', all(){ return Storage.get(this.key, []); }, save(rows){ Storage.set(this.key, rows); } },
+      activity: { key: 'ua:activity', all(){ return Storage.get(this.key, []); }, save(rows){ Storage.set(this.key, rows); } },
+    };
+
+    // Activity log
+    function logActivity(type, user, details){ const rows = DB.activity.all(); rows.unshift({ id: fmt.id('act'), time: Date.now(), type, user, details }); DB.activity.save(rows.slice(0,200)); renderActivity(); }
+
+    // Dashboard rendering
+    function renderStats(){
+      const users = DB.users.all(); const pays = DB.payments.all(); const refs = DB.referrals.all();
+      qs('#stat-total-users').textContent = users.length;
+      const active = users.filter(u=>u.status==='Active').length; qs('#stat-active-subs').textContent = active;
+      const revenue = pays.filter(p=>p.status==='Paid').reduce((a,b)=>a+b.amount,0); qs('#stat-revenue').textContent = fmt.money(revenue);
+      const today = fmt.dateISO(Date.now()); const newToday = users.filter(u=>fmt.dateISO(u.joinedAt)===today).length; qs('#stat-new').textContent = newToday;
+      qs('#stat-referrals').textContent = refs.length;
+      const conv = refs.length ? Math.round((refs.filter(r=>r.status==='Approved').length / refs.length)*100) : 0; qs('#stat-conv').textContent = conv + '%';
+      MiniChart.line(qs('#spark-users'), sparkline(users.length));
+      MiniChart.bar(qs('#spark-subs'), sparkline(active));
+      MiniChart.line(qs('#spark-revenue'), sparkline(Math.round(revenue)));
+      MiniChart.bar(qs('#spark-new'), sparkline(newToday));
+      MiniChart.line(qs('#spark-referrals'), sparkline(refs.length));
+      MiniChart.line(qs('#spark-conv'), sparkline(conv));
+    }
+    function sparkline(base){ return Array.from({length: 16}).map(()=> Math.max(1, Math.round(base * (0.6 + Math.random()*0.8)))); }
+    function renderActivity(){ const body = qs('#table-activity tbody'); const rows = DB.activity.all(); body.innerHTML = rows.slice(0,20).map(r=>`<tr><td>${fmt.time(r.time)}</td><td>${r.type}</td><td>${r.user||'-'}</td><td>${r.details||''}</td></tr>`).join(''); }
+
+    // Users
+    const UsersUI = (function(){
+      let state = { page: 1, per: 10, sort: { key:'name', dir: 'asc' }, q: '' };
+      function loadState(){ const s = Session.get('ua:users:state', state); state = s; qs('#usersPerPage').value = String(state.per); }
+      function saveState(){ Session.set('ua:users:state', state); }
+      function filtered(){ const q = state.q.toLowerCase(); let rows = DB.users.all().filter(u=> [u.name,u.email,u.role,u.status].join('\n').toLowerCase().includes(q)); const {key,dir} = state.sort; rows.sort((a,b)=> String(a[key]).localeCompare(String(b[key])) * (dir==='asc'?1:-1)); return rows; }
+      function paginate(rows){ const start = (state.page-1)*state.per; return rows.slice(start, start+state.per); }
+      function render(){ const rows = filtered(); const pageRows = paginate(rows); const body = qs('#table-users tbody'); body.innerHTML = pageRows.map(u=>`<tr><td><button class="btn ghost" data-action="profile" data-id="${u.id}">${u.name}</button></td><td>${u.email}</td><td>${u.role}</td><td>${u.status}</td><td><button class="btn secondary" data-action="edit" data-id="${u.id}">Edit</button> <button class="btn danger" data-action="del" data-id="${u.id}">Delete</button></td></tr>`).join(''); renderPager(rows.length); renderStats(); }
+      function renderPager(total){ const el = qs('#usersPagination'); const pages = Math.max(1, Math.ceil(total/state.per)); const cur = Math.min(state.page, pages); state.page = cur; const buttons = Array.from({length: pages}).map((_,i)=>`<button class="btn ${i+1===cur?'':'secondary'}" data-page="${i+1}">${i+1}</button>`).join(' '); el.innerHTML = `<div>${total} results</div><div style="display:flex; gap:6px;">${buttons}</div>`; saveState(); }
+      function setSort(key){ if(state.sort.key===key){ state.sort.dir = state.sort.dir==='asc'?'desc':'asc'; } else { state.sort={ key, dir:'asc' }; } state.page=1; render(); }
+      function setQuery(q){ state.q=q; state.page=1; render(); }
+      function setPer(per){ state.per=Number(per)||10; state.page=1; render(); }
+      function openForm(user){ openModal({ title: user? 'Edit User' : 'Add User', okText: 'Save', content: userForm(user), onOk(){ const data = readUserForm(); const errors = validateUser(data); if(errors.length){ showErrors(errors); return false; } if(user){ updateUser(user.id, data); toast('User updated','success'); } else { createUser(data); toast('User added','success'); } closeModal(); render(); } }); }
+      function userForm(user){ return `<div class="form-grid"><div class="field"><label>Name</label><input id="fName" value="${user?escapeHtml(user.name):''}" /></div><div class="field"><label>Email</label><input id="fEmail" value="${user?escapeHtml(user.email):''}" /></div><div class="field"><label>Role</label><select id="fRole"><option ${user&&user.role==='Admin'?'selected':''}>Admin</option><option ${user&&user.role==='Manager'?'selected':''}>Manager</option><option ${user&&user.role==='Member'?'selected':''}>Member</option></select></div><div class="field"><label>Status</label><select id="fStatus"><option ${user&&user.status==='Active'?'selected':''}>Active</option><option ${user&&user.status==='Invited'?'selected':''}>Invited</option><option ${user&&user.status==='Suspended'?'selected':''}>Suspended</option></select></div></div><div id="formErrors" class="error"></div>`; }
+      function escapeHtml(s){ return String(s).replace(/[&<>"]+/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+      function readUserForm(){ return { name: qs('#fName').value.trim(), email: qs('#fEmail').value.trim(), role: qs('#fRole').value, status: qs('#fStatus').value }; }
+      function validateUser(u){ const errs=[]; if(!u.name) errs.push('Name is required'); if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(u.email)) errs.push('Valid email required'); return errs; }
+      function showErrors(errs){ qs('#formErrors').textContent = errs.join(' • '); }
+      function createUser(u){ const rows = DB.users.all(); const row = { id: fmt.id('user'), joinedAt: Date.now(), ...u }; rows.unshift(row); DB.users.save(rows); logActivity('User Added', u.name, u.email); }
+      function updateUser(id, patch){ const rows = DB.users.all(); const idx = rows.findIndex(r=>r.id===id); if(idx>-1){ rows[idx]=Object.assign({}, rows[idx], patch); DB.users.save(rows); logActivity('User Updated', rows[idx].name, ''); } }
+      function deleteUser(id){ const rows = DB.users.all(); const row = rows.find(r=>r.id===id); const next = rows.filter(r=>r.id!==id); DB.users.save(next); logActivity('User Deleted', row?.name, ''); render(); }
+      function profile(id){ const u = DB.users.all().find(r=>r.id===id); if(!u) return; openModal({ title: 'User Profile', okText: 'Close', hideOk: true, content: `<div class="form-grid"><div class="field" style="grid-column: span 12;"><label>Name</label><div>${escapeHtml(u.name)}</div></div><div class="field" style="grid-column: span 12;"><label>Email</label><div>${escapeHtml(u.email)}</div></div><div class="field"><label>Role</label><div>${u.role}</div></div><div class="field"><label>Status</label><div>${u.status}</div></div><div class="field"><label>Joined</label><div>${fmt.dateISO(u.joinedAt)} ${fmt.time(u.joinedAt)}</div></div></div>` }); }
+      function bind(){
+        $on(qs('#usersSearch'),'input', e=> setQuery(e.target.value));
+        $on(qs('#usersPerPage'),'change', e=> setPer(e.target.value));
+        $on(qs('#userAddBtn'),'click', ()=> openForm());
+        $on(qs('#table-users thead'),'click', e=>{ const th = e.target.closest('th'); if(!th||!th.dataset.sort) return; setSort(th.dataset.sort); });
+        $on(qs('#table-users tbody'),'click', e=>{ const btn = e.target.closest('button'); if(!btn) return; const id = btn.dataset.id; if(btn.dataset.action==='edit') openForm(DB.users.all().find(r=>r.id===id)); else if(btn.dataset.action==='del') confirm("Delete this user?", ()=> deleteUser(id)); else if(btn.dataset.action==='profile') profile(id); });
+        $on(qs('#usersPagination'), 'click', e=>{ const b = e.target.closest('button[data-page]'); if(!b) return; state.page = Number(b.dataset.page); render(); });
+      }
+      return { init(){ loadState(); bind(); render(); }, render };
+    })();
+
+    // Payments UI
+    const PaymentsUI = (function(){
+      let filters = { q:'', from:'', to:'', status:'' };
+      function filtered(){ let rows = DB.payments.all(); if(filters.q){ const q = filters.q.toLowerCase(); rows = rows.filter(r=> [r.user, r.amount, r.status].join('\n').toLowerCase().includes(q)); } if(filters.from){ rows = rows.filter(r=> fmt.dateISO(r.date) >= filters.from); } if(filters.to){ rows = rows.filter(r=> fmt.dateISO(r.date) <= filters.to); } if(filters.status){ rows = rows.filter(r=> r.status===filters.status); } rows.sort((a,b)=> b.date - a.date); return rows; }
+      function render(){ const rows = filtered(); const body = qs('#table-payments tbody'); body.innerHTML = rows.map(p=>`<tr><td>${fmt.dateISO(p.date)} ${fmt.time(p.date)}</td><td>${p.user}</td><td>${fmt.money(p.amount)}</td><td>${p.status}</td><td><button class="btn secondary" data-action="edit" data-id="${p.id}">Edit</button> <button class="btn danger" data-action="del" data-id="${p.id}">Delete</button></td></tr>`).join(''); const total = rows.filter(r=>r.status==='Paid').reduce((a,b)=> a+b.amount, 0); qs('#paymentsTotal').textContent = fmt.money(total); renderStats(); }
+      function openForm(row){
+        const users = DB.users.all();
+        openModal({ title: row?'Edit Payment':'Add Payment', okText:'Save', content: `<div class="form-grid"><div class="field"><label>User</label><select id="pUser">${users.map(u=>`<option value="${u.id}" ${row&&row.userId===u.id?'selected':''}>${u.name}</option>`).join('')}</select></div><div class="field"><label>Amount</label><input id="pAmount" type="number" step="0.01" value="${row?row.amount:''}"/></div><div class="field"><label>Status</label><select id="pStatus"><option ${row&&row.status==='Paid'?'selected':''}>Paid</option><option ${row&&row.status==='Pending'?'selected':''}>Pending</option><option ${row&&row.status==='Failed'?'selected':''}>Failed</option></select></div><div class="field"><label>Date</label><input id="pDate" type="datetime-local" value="${row? new Date(row.date).toISOString().slice(0,16): ''}"/></div></div><div id="formErrors" class="error"></div>`, onOk(){ const userId = qs('#pUser').value; const u = DB.users.all().find(x=>x.id===userId); const amount = Number(qs('#pAmount').value); const status = qs('#pStatus').value; const date = qs('#pDate').value ? new Date(qs('#pDate').value).getTime() : Date.now(); const errs=[]; if(!u) errs.push('User is required'); if(!(amount>0)) errs.push('Amount must be > 0'); if(!status) errs.push('Status required'); if(errs.length){ qs('#formErrors').textContent = errs.join(' • '); return false; } if(row){ const rows = DB.payments.all(); const idx = rows.findIndex(r=>r.id===row.id); rows[idx]=Object.assign({}, row, { userId, user: u.name, amount, status, date }); DB.payments.save(rows); logActivity('Payment Updated', u.name, fmt.money(amount)); toast('Payment updated','success'); } else { const rows = DB.payments.all(); rows.unshift({ id: fmt.id('pay'), userId, user: u.name, amount, status, date }); DB.payments.save(rows); logActivity('Payment Added', u.name, fmt.money(amount)); toast('Payment added','success'); } closeModal(); render(); } });
+      }
+      function del(id){ const rows = DB.payments.all(); const row = rows.find(r=>r.id===id); confirm('Delete this payment?', ()=>{ DB.payments.save(rows.filter(r=>r.id!==id)); toast('Payment deleted','success'); logActivity('Payment Deleted', row?.user, fmt.money(row?.amount||0)); render(); }); }
+      function bind(){
+        $on(qs('#paymentsSearch'),'input', e=>{ filters.q = e.target.value; render(); });
+        $on(qs('#paymentsDateFrom'),'change', e=>{ filters.from = e.target.value; render(); });
+        $on(qs('#paymentsDateTo'),'change', e=>{ filters.to = e.target.value; render(); });
+        $on(qs('#paymentsStatus'),'change', e=>{ filters.status = e.target.value; render(); });
+        $on(qs('#paymentAddBtn'),'click', ()=> openForm());
+        $on(qs('#table-payments tbody'),'click', e=>{ const b = e.target.closest('button'); if(!b) return; const id=b.dataset.id; if(b.dataset.action==='edit'){ const row = DB.payments.all().find(r=>r.id===id); openForm(row); } else if(b.dataset.action==='del'){ del(id); } });
+      }
+      return { init(){ bind(); render(); }, render };
+    })();
+
+    // Referrals UI
+    const ReferralsUI = (function(){
+      let filters = { q:'' };
+      function filtered(){ let rows = DB.referrals.all(); if(filters.q){ const q = filters.q.toLowerCase(); rows = rows.filter(r=> [r.code, r.user, r.status].join('\n').toLowerCase().includes(q)); } rows.sort((a,b)=> b.createdAt - a.createdAt); return rows; }
+      function render(){ const rows = filtered(); const body = qs('#table-referrals tbody'); body.innerHTML = rows.map(r=>`<tr><td>${r.code}</td><td>${r.user}</td><td>${fmt.money(r.reward)}</td><td>${r.status}</td><td>${r.bonusDays}</td><td><button class="btn secondary" data-action="edit" data-id="${r.id}">Edit</button> <button class="btn danger" data-action="del" data-id="${r.id}">Delete</button></td></tr>`).join(''); renderStats(); }
+      function calcBonus(row){ if(row.status==='Approved' && row.reward>=10) row.bonusDays = 7; else if(row.status==='Approved') row.bonusDays = 3; else row.bonusDays = 0; }
+      function openForm(row){ const users = DB.users.all(); openModal({ title: row?'Edit Referral':'Add Referral', okText:'Save', content: `<div class="form-grid"><div class="field"><label>Code</label><input id="rCode" value="${row?row.code:''}"/></div><div class="field"><label>User</label><select id="rUser">${users.map(u=>`<option value="${u.id}" ${row&&row.userId===u.id?'selected':''}>${u.name}</option>`).join('')}</select></div><div class="field"><label>Reward</label><input id="rReward" type="number" step="1" value="${row?row.reward:5}"/></div><div class="field"><label>Status</label><select id="rStatus"><option ${row&&row.status==='Pending'?'selected':''}>Pending</option><option ${row&&row.status==='Approved'?'selected':''}>Approved</option><option ${row&&row.status==='Rejected'?'selected':''}>Rejected</option></select></div></div><div id="formErrors" class="error"></div>`, onOk(){ const code = qs('#rCode').value.trim() || `REF${Math.floor(Math.random()*9000)+1000}`; const userId = qs('#rUser').value; const u = DB.users.all().find(x=>x.id===userId); const reward = Number(qs('#rReward').value)||0; const status = qs('#rStatus').value; if(!u){ qs('#formErrors').textContent = 'User required'; return false; } if(!(reward>=0)){ qs('#formErrors').textContent = 'Reward must be >= 0'; return false; } if(row){ const rows = DB.referrals.all(); const idx = rows.findIndex(x=>x.id===row.id); const upd = Object.assign({}, row, { code, userId, user: u.name, reward, status }); calcBonus(upd); rows[idx]=upd; DB.referrals.save(rows); toast('Referral updated','success'); logActivity('Referral Updated', u.name, code); } else { const rows = DB.referrals.all(); const rec = { id: fmt.id('ref'), code, userId, user: u.name, reward, status, bonusDays:0, createdAt: Date.now() }; calcBonus(rec); rows.unshift(rec); DB.referrals.save(rows); toast('Referral added','success'); logActivity('Referral Added', u.name, code); } closeModal(); render(); } }); }
+      function del(id){ const rows = DB.referrals.all(); const row = rows.find(r=>r.id===id); confirm('Delete this referral?', ()=>{ DB.referrals.save(rows.filter(r=>r.id!==id)); toast('Referral deleted','success'); logActivity('Referral Deleted', row?.user, row?.code); render(); }); }
+      function bind(){
+        $on(qs('#referralsSearch'),'input', e=>{ filters.q = e.target.value; render(); });
+        $on(qs('#referralAddBtn'),'click', ()=> openForm());
+        $on(qs('#table-referrals tbody'),'click', e=>{ const b = e.target.closest('button'); if(!b) return; const id=b.dataset.id; if(b.dataset.action==='edit'){ const row = DB.referrals.all().find(r=>r.id===id); openForm(row); } else if(b.dataset.action==='del'){ del(id); } });
+      }
+      return { init(){ bind(); render(); }, render };
+    })();
+
+    // Reports
+    const ReportsUI = (function(){
+      function renderCharts(){
+        const usersMonthly = monthlySeries(DB.users.all().map(u=>u.joinedAt)); MiniChart.line(qs('#chart-users'), usersMonthly);
+        const revenueMonthly = monthlySeries(DB.payments.all().filter(p=>p.status==='Paid').map(p=>p.date).map((_,i)=> (i%5)+5)); MiniChart.bar(qs('#chart-revenue'), revenueMonthly);
+        const plans = Settings.get().plans; const planCounts = plans.map(p=> Math.floor(Math.random()*40)+5); MiniChart.pie(qs('#chart-plans'), planCounts);
+      }
+      function monthlySeries(dates){ const now = new Date(); const arr = new Array(12).fill(0); dates.forEach(ts=>{ const d = new Date(ts); const diff = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth()); const idx = 11 - Math.min(Math.max(diff,0),11); arr[idx] += 1; }); return arr; }
+      function fillUserFilter(){ const sel = qs('#reportsUser'); const users = DB.users.all(); sel.innerHTML = '<option value="">All Users</option>' + users.map(u=>`<option value="${u.id}">${u.name}</option>`).join(''); }
+      function renderTable(){ const from = qs('#reportsFrom').value; const to = qs('#reportsTo').value; const userId = qs('#reportsUser').value; const acts = DB.activity.all().filter(a=> a.type && (!from || fmt.dateISO(a.time)>=from) && (!to || fmt.dateISO(a.time)<=to)); const rows = acts.map(a=>`<tr><td>${fmt.dateISO(a.time)} ${fmt.time(a.time)}</td><td>${a.user||'-'}</td><td>${a.type}</td><td>${a.details||''}</td></tr>`).join(''); qs('#table-reports tbody').innerHTML = rows; }
+      function exportCSV(){ const rows = qsa('#table-reports tbody tr').map(tr=> qsa('td', tr).map(td=> '"' + td.textContent.replace(/"/g,'""') + '"').join(',')); const header = ['Date','User','Event','Amount'].join(','); const csv = [header, ...rows].join('\n'); downloadText('reports.csv', csv); toast('CSV exported','success'); }
+      function exportPDF(){ // simple canvas based snapshot
+        const table = qs('#table-reports'); const w = 800; const rowH = 24; const rows = qsa('tbody tr', table); const h = 100 + rows.length*rowH; const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h; const ctx = canvas.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.fillStyle='#111'; ctx.font='14px Arial'; ctx.fillText('Reports', 20, 30); let y = 60; qsa('thead th', table).forEach((th,i)=>{ ctx.fillText(th.textContent, 20 + i*180, y); }); y+=10; ctx.beginPath(); ctx.moveTo(20,y); ctx.lineTo(w-20,y); ctx.stroke(); y+=20; rows.forEach(tr=>{ qsa('td', tr).forEach((td,i)=> ctx.fillText(td.textContent.slice(0,28), 20 + i*180, y) ); y+=rowH; }); const url = canvas.toDataURL('image/png'); downloadURL('reports.png', url); toast('PDF exported as PNG snapshot','success'); }
+      function bind(){ ['#reportsFrom','#reportsTo','#reportsUser'].forEach(sel=> $on(qs(sel),'change', renderTable)); $on(qs('#exportCsvBtn'),'click', exportCSV); $on(qs('#exportPdfBtn'),'click', exportPDF); }
+      return { init(){ fillUserFilter(); renderCharts(); renderTable(); bind(); }, render(){ renderCharts(); renderTable(); } };
+    })();
+
+    // Settings UI
+    const SettingsUI = (function(){
+      function load(){ const s=Settings.get(); qs('#prefTheme').value = s.theme; qs('#prefCurrency').value = s.currency; qs('#prefPrimary').value = s.primary; qs('#notifEmail').value=s.notifications.email; qs('#notifSms').value=s.notifications.sms; qs('#notifToasts').value=s.notifications.toasts; renderPlans(); }
+      function renderPlans(){ const body = qs('#table-plans tbody'); const plans = Settings.get().plans; body.innerHTML = plans.map(p=>`<tr><td>${p.name}</td><td>${fmt.money(p.price)}</td><td>${p.interval}</td><td>${p.status}</td><td><button class="btn secondary" data-action="edit" data-id="${p.id}">Edit</button> <button class="btn danger" data-action="del" data-id="${p.id}">Delete</button></td></tr>`).join(''); }
+      function savePrefs(){ const theme = qs('#prefTheme').value; const currency = qs('#prefCurrency').value; const primary = qs('#prefPrimary').value; Settings.update({ theme, currency, primary }); applyTheme(); toast('Preferences saved','success'); }
+      function reset(){ localStorage.removeItem(Settings.KEY); applyTheme(); load(); toast('Preferences reset','success'); }
+      function planForm(plan){ return `<div class="form-grid"><div class="field"><label>Name</label><input id="plName" value="${plan?plan.name:''}"/></div><div class="field"><label>Price</label><input id="plPrice" type="number" step="0.01" value="${plan?plan.price:''}"/></div><div class="field"><label>Interval</label><select id="plInterval"><option ${plan&&plan.interval==='month'?'selected':''} value="month">month</option><option ${plan&&plan.interval==='year'?'selected':''} value="year">year</option></select></div><div class="field"><label>Status</label><select id="plStatus"><option ${plan&&plan.status==='active'?'selected':''} value="active">active</option><option ${plan&&plan.status==='inactive'?'selected':''} value="inactive">inactive</option></select></div></div><div id="formErrors" class="error"></div>`; }
+      function openPlanForm(plan){ openModal({ title: plan?'Edit Plan':'Add Plan', okText:'Save', content: planForm(plan), onOk(){ const name = qs('#plName').value.trim(); const price = Number(qs('#plPrice').value)||0; const interval = qs('#plInterval').value; const status = qs('#plStatus').value; const errs=[]; if(!name) errs.push('Name required'); if(!(price>0)) errs.push('Price must be > 0'); if(errs.length){ qs('#formErrors').textContent = errs.join(' • '); return false; } const s = Settings.get(); if(plan){ const idx = s.plans.findIndex(x=>x.id===plan.id); s.plans[idx] = Object.assign({}, plan, { name, price, interval, status }); } else { s.plans.unshift({ id: fmt.id('plan'), name, price, interval, status }); } Settings.set(s); renderPlans(); toast('Plan saved','success'); closeModal(); } }); }
+      function delPlan(id){ const s=Settings.get(); const idx=s.plans.findIndex(p=>p.id===id); if(idx>-1){ s.plans.splice(idx,1); Settings.set(s); renderPlans(); toast('Plan deleted','success'); } }
+      function saveNotif(){ const s=Settings.get(); s.notifications.email=qs('#notifEmail').value; s.notifications.sms=qs('#notifSms').value; s.notifications.toasts=qs('#notifToasts').value; Settings.set(s); toast('Notifications saved','success'); }
+      function bind(){ $on(qs('#savePrefsBtn'),'click', savePrefs); $on(qs('#resetPrefsBtn'),'click', reset); $on(qs('#planAddBtn'),'click', ()=> openPlanForm()); $on(qs('#table-plans tbody'),'click', e=>{ const b=e.target.closest('button'); if(!b) return; const id=b.dataset.id; if(b.dataset.action==='edit'){ const s=Settings.get(); const p=s.plans.find(x=>x.id===id); openPlanForm(p); } else if(b.dataset.action==='del'){ confirm('Delete this plan?', ()=> delPlan(id)); } }); $on(qs('#saveNotifBtn'),'click', saveNotif); }
+      return { init(){ load(); bind(); }, render(){ load(); } };
+    })();
+
+    // Modal helpers
+    function openModal({ title, content, okText='OK', cancelText='Cancel', onOk, onCancel, hideOk=false }){
+      qs('#modalTitle').textContent = title||'Modal';
+      qs('#modalContent').innerHTML = content||'';
+      qs('#modalOk').textContent = okText; qs('#modalCancel').textContent = cancelText;
+      qs('#modal').classList.add('open');
+      qs('#modalOk').style.display = hideOk ? 'none' : '';
+      const okHandler = ()=>{ let res=true; if(onOk) res = onOk(); if(res!==false){ closeModal(); } };
+      const cancelHandler = ()=>{ if(onCancel) onCancel(); closeModal(); };
+      qs('#modalOk').onclick = okHandler; qs('#modalCancel').onclick = cancelHandler; $on(document,'keydown', escClose);
+      function escClose(e){ if(e.key==='Escape'){ cancelHandler(); $off(document,'keydown', escClose); } }
+    }
+    function closeModal(){ qs('#modal').classList.remove('open'); qs('#modalOk').onclick = null; qs('#modalCancel').onclick = null; }
+    function confirm(message, onOk){ openModal({ title:'Confirm', content:`<p>${message}</p>`, okText:'Confirm', cancelText:'Cancel', onOk }); }
+
+    // Downloads
+    function downloadText(name, text){ const blob = new Blob([text], { type:'text/csv' }); const url = URL.createObjectURL(blob); downloadURL(name, url); setTimeout(()=> URL.revokeObjectURL(url), 1000); }
+    function downloadURL(name, url){ const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+
+    // Global search
+    function bindGlobalSearch(){ $on(qs('#globalSearch'),'input', e=>{ const q=e.target.value.toLowerCase(); filterTables(q); }); $on(document,'keydown', e=>{ if(e.altKey && e.key==='/'){ e.preventDefault(); qs('#globalSearch').focus(); } }); }
+    function filterTables(q){ [['#table-users', ['name','email','role','status']], ['#table-payments',['user','status']], ['#table-referrals',['code','user','status']]].forEach(([sel])=>{ const table=qs(sel); if(!table) return; qsa('tbody tr', table).forEach(tr=>{ const text = tr.textContent.toLowerCase(); tr.style.display = text.includes(q)?'':'none'; }); }); }
+
+    // Navbar + Sidebar + Theme
+    function bindNav(){ qsa('.nav button, #userDropdown button[data-route]').forEach(b=> $on(b,'click', ()=> Router.go(b.dataset.route))); }
+    function bindSidebar(){ const sb = qs('#sidebar'); $on(qs('#collapseBtn'),'click', ()=> sb.classList.toggle('collapsed')); $on(qs('#mobileSidebarBtn'),'click', ()=> sb.style.transform = sb.style.transform? '':'translateX(0)'); }
+    function bindUserMenu(){ const btn=qs('#userBtn'), dd=qs('#userDropdown'); $on(btn,'click', ()=> dd.classList.toggle('open')); document.addEventListener('click', (e)=>{ if(!dd.contains(e.target) && !btn.contains(e.target)) dd.classList.remove('open'); }); $on(qs('#themeToggle'),'click', ()=>{ const s=Settings.get(); s.theme = s.theme==='dark'?'light':'dark'; Settings.set(s); applyTheme(); toast('Theme updated','success'); }); qs('#welcomeUser').innerHTML = `Signed in as <strong>${Storage.get('ua:username','admin')}</strong>`; }
+
+    // Logout
+    function bindLogout(){ $on(qs('#logoutConfirmBtn'),'click', ()=>{ confirm('Are you sure you want to logout?', ()=>{ sessionStorage.clear(); toast('Logged out','success'); setTimeout(()=> location.reload(), 400); }); }); }
+
+    // Resize charts on layout change
+    function handleResize(){ renderStats(); if(Router.current==='reports') ReportsUI.render(); }
+
+    // Boot
+    function init(){
+      Seeds.ensure();
+      applyTheme();
+      bindNav(); bindSidebar(); bindUserMenu(); bindGlobalSearch(); bindLogout();
+      UsersUI.init(); PaymentsUI.init(); ReferralsUI.init(); ReportsUI.init(); SettingsUI.init();
+      renderStats(); renderActivity();
+      // Nav clicks
+      $on(qs('#nav'),'click', e=>{ const b=e.target.closest('button[data-route]'); if(!b) return; Router.go(b.dataset.route); if(b.dataset.route==='reports') ReportsUI.render(); });
+      // Resize
+      window.addEventListener('resize', debounce(handleResize, 150));
+    }
+
+    function debounce(fn, wait){ let t; return function(...args){ clearTimeout(t); t=setTimeout(()=> fn.apply(this,args), wait); } }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+  })();
+  </script>
+</body>
+</html>
+
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
